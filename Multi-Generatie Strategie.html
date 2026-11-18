@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-Generatie Strategie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column. The month's signal leads as a 60/40 allocation bar; everything below explains or qualifies it. */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#14233b; --muted:#566579; --line:#d3dae5;
+  --accent:#1f4e79; --on-accent:#ffffff; --soft:#e7edf5;
+  --us:#1f4e79; --on-us:#ffffff;
+  --exus:#6aa3d8; --on-exus:#0e1a2c;
+  --bond:#a3acb9; --on-bond:#0e1a2c;
+  --gold:#c9a227; --on-gold:#0e1a2c;
+  --tbill:#dbe2ec; --on-tbill:#0e1a2c;
+  --warn:#8f4a12; --warn-bg:#f7e7d6;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1622; --surface:#18212f; --ink:#e6ecf5; --muted:#9dabc0; --line:#2c394b;
+    --accent:#8bbcec; --on-accent:#0b1422; --soft:#1f2b3c;
+    --us:#4f86c0; --on-us:#08111e;
+    --exus:#9ccaf2; --on-exus:#08111e;
+    --bond:#8f9aab; --on-bond:#08111e;
+    --gold:#dcb341; --on-gold:#08111e;
+    --tbill:#c9d2df; --on-tbill:#08111e;
+    --warn:#f0b783; --warn-bg:#40290f;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1622; --surface:#18212f; --ink:#e6ecf5; --muted:#9dabc0; --line:#2c394b;
+  --accent:#8bbcec; --on-accent:#0b1422; --soft:#1f2b3c;
+  --us:#4f86c0; --on-us:#08111e;
+  --exus:#9ccaf2; --on-exus:#08111e;
+  --bond:#8f9aab; --on-bond:#08111e;
+  --gold:#dcb341; --on-gold:#08111e;
+  --tbill:#c9d2df; --on-tbill:#08111e;
+  --warn:#f0b783; --warn-bg:#40290f;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:34px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:600}
+h3{font-size:18px;font-weight:600}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+
+header.top{padding:28px 0 4px;display:flex;flex-direction:column;gap:10px}
+header.top p{max-width:62ch}
+main{display:flex;flex-direction:column;gap:20px;padding-top:20px}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px 18px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-direction:column;gap:4px}
+
+.stale{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:12px 14px;font-weight:600}
+
+/* signal */
+.alloc{display:flex;gap:3px;min-height:84px}
+.seg{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:10px 12px;border-radius:5px;min-width:0}
+.seg .w{font-family:var(--mono);font-size:14px;font-weight:600}
+.seg .t{font-family:var(--display);font-size:30px;font-weight:700;line-height:1}
+.seg .d{font-size:13px;font-weight:500;line-height:1.2}
+.seg[data-a="us"]{background:var(--us);color:var(--on-us)}
+.seg[data-a="exus"]{background:var(--exus);color:var(--on-exus)}
+.seg[data-a="bond"]{background:var(--bond);color:var(--on-bond)}
+.seg[data-a="gold"]{background:var(--gold);color:var(--on-gold)}
+.seg[data-a="tbill"]{background:var(--tbill);color:var(--on-tbill);box-shadow:inset 0 0 0 1px var(--line)}
+ol.todo,ul.plain{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.note{background:var(--soft);border-radius:6px;padding:12px 14px;font-size:14px;display:flex;flex-direction:column;gap:6px}
+
+/* optional amount */
+label.fl{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+.affix{position:relative;max-width:260px}
+.affix i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);color:var(--muted)}
+input[type="text"]{width:100%;font:inherit;font-size:16px;font-family:var(--mono);text-align:right;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px 10px 30px;min-height:44px}
+input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.amounts{display:flex;gap:8px;flex-wrap:wrap}
+.amounts span{font-family:var(--mono);font-weight:600;font-size:15px;background:var(--soft);border-radius:6px;padding:6px 10px}
+
+/* questions */
+.q{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0;padding-top:0}
+.q.off{opacity:.55}
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.side{border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.side .tk{font-family:var(--mono);font-weight:600;font-size:14px}
+.side .nm{font-size:13px;color:var(--muted)}
+.side .val{font-family:var(--mono);font-size:19px;font-weight:600}
+.side.win{border-color:var(--accent);background:var(--soft);box-shadow:inset 3px 0 0 var(--accent)}
+.side.win .tk::after{content:" \2713";font-weight:700}
+.verdict{font-weight:600}
+
+/* tables */
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.sw.us{background:var(--us)}.sw.exus{background:var(--exus)}.sw.bond{background:var(--bond)}.sw.gold{background:var(--gold)}.sw.tbill{background:var(--tbill);box-shadow:inset 0 0 0 1px var(--muted)}
+.etfs th,.etfs td{padding:9px 6px;font-size:14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.etfs thead th{font-weight:600;font-size:13px;color:var(--muted)}
+.etfs td.r,.etfs th.r{text-align:right;white-space:nowrap}
+.etfs .tk{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.etfs .sub{display:block;color:var(--muted);font-size:13px;font-family:var(--body)}
+.etfs td:first-child{width:42%}
+.states th,.states td{padding:8px;text-align:left;font-size:13px;vertical-align:middle}
+.states thead th{font-weight:600;border-bottom:1px solid var(--line)}
+.states tbody th{font-weight:600;white-space:nowrap}
+.states td{width:30%}
+.cell{display:flex;align-items:center;justify-content:center;height:34px;border-radius:4px;background:var(--soft);font-size:12px;color:var(--muted);font-weight:600;text-align:center}
+.cell.on{background:var(--accent);color:var(--on-accent)}
+.hist{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.log{display:flex;flex-direction:column;gap:8px;list-style:none;margin:0;padding:0}
+.log li{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;flex-wrap:wrap}
+.log .m{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.facts th,.facts td{padding:8px 6px;font-size:14px;border-bottom:1px solid var(--line);text-align:right}
+.facts th:first-child,.facts td:first-child{text-align:left}
+.facts thead th{font-weight:600;font-size:13px;color:var(--muted)}
+.facts td.e{font-weight:600}
+ul.risks{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+footer{padding-top:20px;font-size:13px;color:var(--muted);max-width:68ch;display:flex;flex-direction:column;gap:8px}
+@media (max-width:420px){h1{font-size:28px}section.card{padding:18px 14px}.seg .t{font-size:26px}}
+</style>
+</head>
+<body>
+
+<!-- MAANDDATA. Nieuwste maand bovenaan. "month" = maand waarvoor het signaal geldt, "asOf" = peildatum (laatste beursdag van de maand ervoor),
+     "basis" = "close" (totaalrendement uit slotkoersen) of "nav". Het signaal wordt uit "returns" berekend; er staat nergens anders een signaal hard in de pagina. -->
+<script id="data" type="application/json">
+{
+  "months": [
+    {
+      "month": "2026-11",
+      "asOf": "2026-10-31",
+      "updated": "2026-11-18",
+      "basis": "nav",
+      "returns": { "VTI": 12.06, "VEU": 13.67, "SHY": 2.04, "GLD": -2.84, "TLT": -5.16 },
+      "sources": { "VTI": "Vanguard", "VEU": "Vanguard", "SHY": "Yahoo Finance", "GLD": "Yahoo Finance, AAII", "TLT": "Yahoo Finance" }
+    }
+  ]
+}
+</script>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Maandsignaal · aandelenmomentum + goud/obligaties</span>
+  <h1>Multi-Generatie Strategie</h1>
+  <p>Het signaal van deze maand, klaar om uit te voeren. Je hoeft niets in te vullen. Het signaal wordt één keer per maand vastgesteld, op de laatste beursdag van de maand na het slot van de Amerikaanse beurs.</p>
+</header>
+
+<main>
+
+<div class="stale" id="stale" hidden></div>
+
+<section class="card" aria-labelledby="h-sig">
+  <div class="head">
+    <span class="eyebrow" id="sigEyebrow"></span>
+    <h2 id="h-sig"></h2>
+    <p class="muted small" id="sigBasis"></p>
+  </div>
+  <div class="alloc" id="alloc"></div>
+  <div class="head">
+    <h3>Wat je doet</h3>
+  </div>
+  <ol class="todo" id="todo"></ol>
+  <div class="note"><span id="nextCheck"></span></div>
+  <div>
+    <label class="fl" for="amount">Optioneel: je belegde bedrag, om de verdeling in geld te zien</label>
+    <div class="affix"><i>€</i><input type="text" inputmode="decimal" id="amount" autocomplete="off" placeholder="0"></div>
+  </div>
+  <div class="amounts" id="amounts" hidden></div>
+</section>
+
+<section class="card" aria-labelledby="h-why">
+  <div class="head">
+    <span class="eyebrow">Waarom dit signaal</span>
+    <h2 id="h-why">Drie vergelijkingen over 12 maanden</h2>
+    <p class="muted small" id="whyBasis"></p>
+  </div>
+  <div class="q" id="q1">
+    <span class="eyebrow">Vraag 1 · noodrem</span>
+    <h3>Verslaan Amerikaanse aandelen de kortlopende staatsobligaties?</h3>
+    <div class="duel"><div class="side" data-k="VTI"><span class="tk">VTI</span><span class="nm">Amerikaanse aandelen</span><span class="val"></span></div><div class="side" data-k="SHY"><span class="tk">SHY</span><span class="nm">Kortlopende staatsobligaties</span><span class="val"></span></div></div>
+    <p class="verdict"></p>
+  </div>
+  <div class="q" id="q2">
+    <span class="eyebrow">Vraag 2 · welke aandelen</span>
+    <h3>Welke aandelen presteerden het best?</h3>
+    <div class="duel"><div class="side" data-k="VTI"><span class="tk">VTI</span><span class="nm">Amerikaanse aandelen</span><span class="val"></span></div><div class="side" data-k="VEU"><span class="tk">VEU</span><span class="nm">Aandelen buiten de VS</span><span class="val"></span></div></div>
+    <p class="verdict"></p>
+  </div>
+  <div class="q" id="q3">
+    <span class="eyebrow">Vraag 3 · defensief deel</span>
+    <h3>Verslaat goud de obligaties?</h3>
+    <div class="duel"><div class="side" data-k="GLD"><span class="tk">GLD</span><span class="nm">Goud</span><span class="val"></span></div><div class="side" data-k="TLT"><span class="tk">TLT</span><span class="nm">Amerikaanse staatsobligaties</span><span class="val"></span></div></div>
+    <p class="verdict"></p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-etf">
+  <div class="head">
+    <span class="eyebrow">De instrumenten</span>
+    <h2 id="h-etf">De vijf ETF's</h2>
+  </div>
+  <div class="scroll">
+    <table class="etfs">
+      <thead><tr><th scope="col">ETF</th><th scope="col">Rol</th><th scope="col" class="r">12 mnd</th></tr></thead>
+      <tbody id="etfRows"></tbody>
+    </table>
+  </div>
+  <div class="note">
+    <span>SHY heeft twee rollen: meetlat voor de noodrem en parkeerplaats voor het aandelendeel als de noodrem aangaat.</span>
+    <span>Deze vijf ETF's noteren in de VS. Beleggers in de EU kunnen ze doorgaans niet rechtstreeks kopen en hebben dan een UCITS-alternatief nodig.</span>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-rules">
+  <div class="head">
+    <span class="eyebrow">De strategie</span>
+    <h2 id="h-rules">Drie regels, zes mogelijke standen</h2>
+  </div>
+  <ul class="plain">
+    <li><strong>60% volgt aandelen.</strong> VTI of VEU: de sterkste van de twee over de voorbije 12 maanden.</li>
+    <li><strong>Noodrem.</strong> Haalt VTI over 12 maanden minder dan SHY, dan gaat die 60% naar SHY.</li>
+    <li><strong>40% zit in goud of obligaties.</strong> GLD of TLT: de sterkste van de twee over 12 maanden.</li>
+  </ul>
+  <p class="small muted">Er wordt alleen op de laatste beursdag van de maand gekeken, met de slotkoersen van die dag. Het signaal geldt voor de hele volgende maand. Tussendoor wordt niet bijgestuurd.</p>
+  <div class="scroll">
+    <table class="states">
+      <thead>
+        <tr>
+          <th scope="col">Aandelendeel 60%</th>
+          <th scope="col"><span class="sw gold"></span>GLD<span class="hist">goud</span></th>
+          <th scope="col"><span class="sw bond"></span>TLT<span class="hist">obligaties</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row"><span class="sw us"></span>VTI</th>
+          <td><div class="cell" data-eq="VTI" data-def="GLD"></div></td><td><div class="cell" data-eq="VTI" data-def="TLT"></div></td></tr>
+        <tr><th scope="row"><span class="sw exus"></span>VEU</th>
+          <td><div class="cell" data-eq="VEU" data-def="GLD"></div></td><td><div class="cell" data-eq="VEU" data-def="TLT"></div></td></tr>
+        <tr><th scope="row"><span class="sw tbill"></span>SHY<span class="hist">noodrem</span></th>
+          <td><div class="cell" data-eq="SHY" data-def="GLD"></div></td><td><div class="cell" data-eq="SHY" data-def="TLT"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-log">
+  <div class="head">
+    <span class="eyebrow">Logboek</span>
+    <h2 id="h-log">Signalen per maand</h2>
+  </div>
+  <ul class="log" id="log"></ul>
+</section>
+
+<section class="card" aria-labelledby="h-facts">
+  <div class="head">
+    <span class="eyebrow">Lees dit voor je begint</span>
+    <h2 id="h-facts">Wat de backtest wel en niet aantoont</h2>
+  </div>
+  <div class="scroll">
+    <table class="facts">
+      <thead><tr><th scope="col">1975 tot juli 2026, in USD</th><th scope="col">Multi-Generatie</th><th scope="col">60/40</th><th scope="col">S&amp;P 500</th></tr></thead>
+      <tbody class="num">
+        <tr><td>Rendement per jaar</td><td class="e">14,0%</td><td>10,4%</td><td>12,5%</td></tr>
+        <tr><td>Grootste terugval</td><td class="e">-15,6%</td><td>-32,5%</td><td>-50,9%</td></tr>
+        <tr><td>Slechtste kalenderjaar</td><td class="e">-11,4%</td><td>-22,1%</td><td>-37,0%</td></tr>
+        <tr><td>Langst onder water</td><td class="e">25 mnd</td><td>49 mnd</td><td>73 mnd</td></tr>
+        <tr><td>Wissels per jaar</td><td class="e">2,5</td><td>0</td><td>0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="risks">
+    <li><strong>De backtest gebruikt indices, deze pagina ETF's.</strong> De backtest rekent met een brede Amerikaanse obligatie-index (US Aggregate) en met T-bills, en zet het aandelendeel bij de noodrem in die obligatie-index. Deze pagina gebruikt TLT (staatsobligaties van 20 jaar en langer) als obligatiedeel en SHY (staatsobligaties van 1 tot 3 jaar) als meetlat en als bestemming bij de noodrem. De backtestcijfers gelden dus niet één-op-één voor deze invulling.</li>
+    <li><strong>Geen voorsprong sinds 2010.</strong> Van 2010 tot juli 2026 haalde de strategie ongeveer 9,5% per jaar tegenover 9,7% voor de vaste 60/40. De volledige meerprestatie dateert van voor 2010.</li>
+    <li><strong>Traag signaal.</strong> Twaalf maanden terugkijken beschermt niet tegen een snelle daling. De terugvallen van 2000 en 2022 kwamen voor het model wisselde.</li>
+    <li><strong>Valse signalen.</strong> Bij een V-vormig herstel stapt het model uit bij de bodem en laat weer in. Dat kostte rendement in 2015 (-3,7%) en 2018 (-5,7%).</li>
+    <li><strong>Gevoelig voor de instelling.</strong> Twaalf maanden is in deze steekproef de gunstigste terugblik. Met 6 maanden daalt het rendement naar 11,9% per jaar.</li>
+    <li><strong>Tot 100% staatsobligaties.</strong> Staat de noodrem aan en verslaat TLT goud, dan zit de hele portefeuille in Amerikaanse staatsobligaties: 60% SHY en 40% TLT.</li>
+    <li><strong>Kosten en belastingen ontbreken.</strong> De backtest rekent zonder fondskosten, belastingen of beurstaks. Bij 50 basispunten kosten per wissel zakt het rendement naar 13,4%.</li>
+    <li><strong>Valutarisico.</strong> Alle cijfers zijn in USD. Wie in euro rekent, draagt daarbovenop het wisselkoersrisico.</li>
+    <li><strong>Beperkte steekproef.</strong> De periode dekt ongeveer anderhalve obligatiecyclus en één goudcyclus.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p id="updated"></p>
+  <p>De backtestcijfers komen uit het backtestrapport van de strategie (september 2026). Historische backtest voor onderzoeksdoeleinden. Rendementen uit het verleden bieden geen garantie voor de toekomst. Dit is geen beleggingsadvies en geen aanbeveling om financiële instrumenten te kopen of te verkopen.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var ETF={
+  VTI:{a:'us',name:'Vanguard Total Stock Market ETF',role:'Amerikaanse aandelen',short:'Amerikaanse aandelen',low:'Amerikaanse aandelen'},
+  VEU:{a:'exus',name:'Vanguard FTSE All-World ex-US ETF',role:'Aandelen buiten de VS',short:'Aandelen buiten de VS',low:'aandelen buiten de VS'},
+  TLT:{a:'bond',name:'iShares 20+ Year Treasury Bond ETF',role:'Amerikaanse staatsobligaties',short:'Obligaties',low:'langlopende staatsobligaties'},
+  GLD:{a:'gold',name:'SPDR Gold Shares',role:'Goud',short:'Goud',low:'goud'},
+  SHY:{a:'tbill',name:'iShares 1-3 Year Treasury Bond ETF',role:'Meetlat en noodrem',short:'Kortlopende staatsobligaties',low:'kortlopende staatsobligaties'}
+};
+var ORDER=['VTI','VEU','TLT','GLD','SHY'];
+var data; try{data=JSON.parse(document.getElementById('data').textContent);}catch(e){data={months:[]};}
+var months=data.months||[];
+function $(id){return document.getElementById(id);}
+function el(tag,cls,txt){var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e;}
+function fPct(v){return (v>0?'+':'')+v.toLocaleString('nl-BE',{minimumFractionDigits:1,maximumFractionDigits:2})+'%';}
+function fEur(v){return '€ '+Math.round(v).toLocaleString('nl-BE');}
+function monthName(ym,withYear){var p=ym.split('-'); var d=new Date(Number(p[0]),Number(p[1])-1,1); return d.toLocaleDateString('nl-BE',withYear===false?{month:'long'}:{month:'long',year:'numeric'});}
+function dayName(iso){var p=iso.split('-'); return new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).toLocaleDateString('nl-BE',{day:'numeric',month:'long',year:'numeric'});}
+
+/* The three rules. Strict comparisons: a tie means noodrem aan, VTI, resp. TLT. Risk-off parks the 60% in SHY. */
+function signal(r){
+  var riskOn=r.VTI>r.SHY;
+  return {riskOn:riskOn, eq:riskOn?(r.VEU>r.VTI?'VEU':'VTI'):'SHY', def:r.GLD>r.TLT?'GLD':'TLT'};
+}
+function label(s){return '60% '+s.eq+' · 40% '+s.def;}
+
+if(!months.length){ $('h-sig').textContent='Nog geen signaal beschikbaar'; return; }
+var cur=months[0], r=cur.returns, sig=signal(r), prev=months[1]?signal(months[1].returns):null;
+
+/* stale guard */
+var now=new Date(), nowYm=now.getFullYear()+'-'+('0'+(now.getMonth()+1)).slice(-2);
+if(nowYm>cur.month){
+  var st=$('stale'); st.hidden=false;
+  st.textContent='Let op: dit is het signaal van '+monthName(cur.month)+'. Het signaal voor '+monthName(nowYm)+' is nog niet gepubliceerd.';
+}
+
+/* headline */
+$('sigEyebrow').textContent='Signaal voor '+monthName(cur.month);
+$('h-sig').textContent='Deze maand: 60% in '+sig.eq+', 40% in '+sig.def;
+$('sigBasis').textContent='Gebaseerd op de rendementen over 12 maanden per '+dayName(cur.asOf)+'.';
+$('whyBasis').textContent='Totaalrendement over 12 maanden inclusief uitkeringen, op basis van '+(cur.basis==='close'?'slotkoersen':'de intrinsieke waarde (NAV)')+', in USD, per '+dayName(cur.asOf)+'.';
+
+/* allocation bar */
+var al=$('alloc');
+[[sig.eq,60],[sig.def,40]].forEach(function(x){
+  var s=el('div','seg'); s.dataset.a=ETF[x[0]].a; s.style.flex=x[1]+' 1 0';
+  s.appendChild(el('span','w',x[1]+'%')); s.appendChild(el('span','t',x[0])); s.appendChild(el('span','d',ETF[x[0]].short)); al.appendChild(s);
+});
+
+/* actions */
+var todo=$('todo'), held=[sig.eq,sig.def], both=sig.eq===sig.def;
+if(both) todo.appendChild(el('li',null,'Zet je volledige portefeuille in '+sig.eq+'.'));
+else{
+  todo.appendChild(el('li',null,'Zet 60% van je portefeuille in '+sig.eq+' ('+ETF[sig.eq].low+').'));
+  todo.appendChild(el('li',null,'Zet 40% in '+sig.def+' ('+ETF[sig.def].low+').'));
+}
+var out=['VTI','VEU','SHY','TLT','GLD'].filter(function(t){return held.indexOf(t)<0;});
+todo.appendChild(el('li',null,'Heb je nog '+out.slice(0,-1).join(', ')+(out.length>1?' of ':'')+out.slice(-1)+'? Verkoop die posities eerst.'));
+if(prev){
+  if(prev.eq===sig.eq&&prev.def===sig.def) todo.appendChild(el('li',null,'Geen wissel tegenover vorige maand. Breng de verdeling alleen terug naar '+(both?'100%':'60/40')+'.'));
+  else todo.appendChild(el('li',null,'Wissel tegenover vorige maand: van '+label(prev)+' naar '+label(sig)+'.'));
+}
+todo.appendChild(el('li',null,'Doe daarna niets tot het volgende maandsignaal.'));
+
+/* next signal date: last weekday of the signal month (exchange holidays not modelled, hence "rond") */
+(function(){
+  var p=cur.month.split('-'), d=new Date(Number(p[0]),Number(p[1]),0);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()-1);
+  $('nextCheck').textContent='Volgend signaal: rond '+d.toLocaleDateString('nl-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+', de laatste beursdag van de maand, na het slot van de Amerikaanse beurs.';
+})();
+
+/* optional amount */
+function amt(s){
+  s=String(s||'').replace(/[\s€]/g,''); if(s==='') return NaN;
+  if(s.indexOf(',')>-1) s=s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');
+  var v=Number(s); return isFinite(v)&&v>0?v:NaN;
+}
+$('amount').addEventListener('input',function(ev){
+  var v=amt(ev.target.value), box=$('amounts'); box.textContent='';
+  if(isNaN(v)){box.hidden=true; return;}
+  box.hidden=false;
+  if(both) box.appendChild(el('span',null,sig.eq+' '+fEur(v)));
+  else{ box.appendChild(el('span',null,sig.eq+' '+fEur(v*0.6))); box.appendChild(el('span',null,sig.def+' '+fEur(v*0.4))); }
+});
+
+/* questions */
+function duel(id,winner,verdict,off){
+  var q=$(id); q.classList.toggle('off',!!off);
+  Array.prototype.forEach.call(q.querySelectorAll('.side'),function(sd){
+    var k=sd.dataset.k; sd.querySelector('.val').textContent=fPct(r[k]); sd.classList.toggle('win',!off&&k===winner);
+  });
+  q.querySelector('.verdict').textContent=verdict;
+}
+duel('q1',sig.riskOn?'VTI':'SHY',sig.riskOn?'Ja. Het aandelendeel van 60% blijft in aandelen.':'Nee. De noodrem gaat aan: het aandelendeel van 60% gaat naar SHY.');
+duel('q2',r.VEU>r.VTI?'VEU':'VTI',!sig.riskOn?'Vervalt deze maand. Het aandelendeel zit in SHY.':(r.VEU>r.VTI?'VEU. Aandelen buiten de VS krijgen de 60%.':'VTI. Amerikaanse aandelen krijgen de 60%.'),!sig.riskOn);
+duel('q3',r.GLD>r.TLT?'GLD':'TLT',r.GLD>r.TLT?'Ja. Het defensieve deel van 40% zit in goud.':'Nee. Het defensieve deel van 40% zit in obligaties.');
+
+/* ETF table */
+var tb=$('etfRows');
+ORDER.forEach(function(t){
+  var tr=el('tr'), c1=el('td'), c2=el('td'), c3=el('td','r num',fPct(r[t]));
+  c1.appendChild(el('span','sw '+ETF[t].a)); c1.appendChild(el('span','tk',t)); c1.appendChild(el('span','sub',ETF[t].name));
+  c2.appendChild(document.createTextNode(ETF[t].role));
+  if(held.indexOf(t)>-1){c2.appendChild(document.createTextNode(' ')); c2.appendChild(el('span','pill','Aanhouden'));}
+  if(cur.sources&&cur.sources[t]) c2.appendChild(el('span','sub','Bron: '+cur.sources[t]));
+  tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3); tb.appendChild(tr);
+});
+
+/* state grid */
+Array.prototype.forEach.call(document.querySelectorAll('.cell'),function(c){
+  var on=c.dataset.eq===sig.eq&&c.dataset.def===sig.def;
+  c.classList.toggle('on',on);
+  c.textContent=on?(c.dataset.rest?'Nu · '+c.dataset.rest:'Nu'):(c.dataset.rest||'');
+});
+
+/* log */
+var ul=$('log');
+months.forEach(function(m,i){
+  var s=signal(m.returns), li=el('li'), left=el('span');
+  left.appendChild(el('span','m',monthName(m.month)+'  ')); left.appendChild(el('strong',null,label(s)));
+  var older=months[i+1]?signal(months[i+1].returns):null;
+  li.appendChild(left);
+  if(older&&(older.eq!==s.eq||older.def!==s.def)) li.appendChild(el('span','pill','Wissel'));
+  ul.appendChild(li);
+});
+
+$('updated').textContent='Laatst bijgewerkt op '+dayName(cur.updated)+'. Rendementscijfers: fondsuitgevers en financiële dataproviders, zie de bron per ETF.';
+})();
+</script>
+</body>
+</html>
